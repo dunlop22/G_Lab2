@@ -12,8 +12,19 @@ class SoftwareRender:
     def create_objects(self):
         self.object = object_3d(self)
 
-    def draw(self): #Jтрисовка
+    def new_position(self, fig_position):
+        new_position = []
+        for i in range(len(fig_position)):
+            new_position .append([fig_position[i][0], fig_position[i][1]])
+        return new_position
+
+    def draw(self): #Отрисовка
         self.screen.fill(pg.Color('darkslategray')) #Цвет заднего фона
+        pg.draw.rect(self.screen, (255, 255, 255), 
+                 (256, 256, 514, 514), 1)
+        fig1_position = [[300, 300, 10], [500, 300, 10], [300, 500, 10]]
+        fig1_color = 'yellow'
+        pg.draw.polygon(self.screen, 'black', self.new_position(fig1_position), 1)
 
     def run(self):
         while True:
@@ -22,6 +33,8 @@ class SoftwareRender:
             pg.display.set_caption(str("Лабораторная работа №2, Голиков"))  #Заголовок приложения 
             pg.display.flip()
             self.clock.tick(self.FPS)   #Обновление поверхности отрисовки
+            
+            
 
 if __name__ == '__main__':
     app = SoftwareRender()  #Экземпляр класса
