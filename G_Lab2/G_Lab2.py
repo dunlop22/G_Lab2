@@ -9,21 +9,141 @@ class SoftwareRender:
 		self.FPS = 60       #Кадры в секунду
 		self.screen = pg.display.set_mode(self.RES)
 		self.clock = pg.time.Clock()
-		self.figure = [[[[300, 300, 10], [500, 300, 10], [300, 500, 10]] , 'yellow']]
+		self.figure = [[[[300, 300, 10], [500, 300, 10], [300, 500, 10]] , 'yellow'], [[[400, 450, 10], [600, 450, 5], [300, 400, 50]] , 'black']]
 		self.windows = []   #Стек окон
+	
+	#ПОМЕНЯТЬ
+	def getZ(self, fig, wind):
+		
+		coord = [[wind[0], wind[1]], [wind[0], wind[1] + wind[3]], [wind[0] + wind[2], wind[1] + wind[3]], [wind[0] + wind[2], wind[1]]]
 
-	def create_objects(self):
-		self.object = object_3d(self)
+		d = - (fig[0][0][0] * (fig[0][1][1] * fig[0][2][2] - fig[0][2][1] * fig[0][1][2]) + fig[0][1][0] * (fig[0][2][1] * fig[0][0][2] - fig[0][0][1] * fig[0][2][2]) + fig[0][2][0] * (fig[0][0][1] * fig[0][1][2] - fig[0][1][1] * fig[0][0][2]))
+		a = fig[0][0][1] * (fig[0][1][2] - fig[0][2][2]) + fig[0][1][1] * (fig[0][2][2] - fig[0][0][2]) + fig[0][2][1] * (fig[0][0][2] - fig[0][1][2])
+		b = fig[0][0][2] * (fig[0][1][0] - fig[0][2][0]) + fig[0][1][2] * (fig[0][2][0] - fig[0][0][0]) + fig[0][2][2] * (fig[0][0][0] - fig[0][1][0])
+		c = fig[0][0][0] * (fig[0][1][1] - fig[0][2][1]) + fig[0][1][0] * (fig[0][2][1] - fig[0][0][1]) + fig[0][2][0] * (fig[0][0][1] - fig[0][1][1])
+		z = -(d + a * coord[0][0] + b * coord[0][1]) / c
+
+		mn = z
+		mx = z
+
+		for i in range(1, len(coord)):
+			z = -(d + a * coord[i][0] + b * coord[i][1]) / c
+
+			if z > mx:
+				mx = z
+
+			if z < mn:
+				mn = z
+
+		return mn, mx
+
+	#ПОМЕНЯТЬ
+	def draw_func(self, dr, win):
+		ready  = True
+		zmin, zmax = self.getZ(dr[0], win)
+		n = 0
+
+		for i in range(1, len(dr)):
+			a, b = self.getZ(dr[i], win)
+			
+			if a > zmax:
+				n = i
+				zmax = b
+				zmin = a
+
+		pg.draw.rect(self.screen, dr[n][1], win)
+			
+
+	#ПОМЕНЯТЬ
+	def check_angle(self, vert, x1, x2, y1, y2):
+		x = vert[0]
+		y = vert[1]
+
+		if x >= x2 and y >= y1 and y < y2:
+			t = 0
+		elif x > x2 and y >= y2:
+			t = 1
+		elif x > x1 and x <= x2 and y >= y2:
+			t = 2
+		elif x <= x1 and y > y2:
+			t = 3
+		elif x <= x1 and y > y1 and y <= y2:
+			t = 4
+		elif x < x1 and y <= y1:
+			t = 5
+		elif x >= x1 and x < x2 and y <= y1:
+			t = 6
+		else:
+			t = 7
+
+		return t
+
+	#ПОМЕНЯТЬ
+	def check_ohvat(self, fig, wind):
+		fv = fig[0]
+		ang = []
+
+		x1 = wind[0]
+		x2 = wind[0] + wind[2]
+
+		y1 = wind[1]
+		y2 = wind[1] + wind[3]
+
+		for vert in fv:
+			ang.append(self.check_angle(vert, x1, x2, y1, y2))
+
+		s = 0
+
+		for i in range(len(ang)):
+			a = ang[(i + 1) % len(ang)] - ang[i]
+
+			if a > 4:
+				a -= 8
+			elif a < -4:
+				a += 8
+			elif abs(a) == 4:
+				tx1 = fv[i][0]
+				tx2 = fv[(i + 1) % len(fv)][0]
+
+				ty1 = fv[i][1]
+				ty2 = fv[(i + 1) % len(fv)][1]
+				
+				f = [fig[0].copy(), fig[1]]
+
+				d = [tx1 + (y1 - ty1) * (tx2 - tx1) / (ty2 -ty1), y1]
+				t = self.check_angle(d, x1, x2, y1, y2)
+
+				if (t == ang[i] or t == ang[(i + 1) % len(ang)]):
+					d = [tx1 + (y2 - ty1) * (tx2 - tx1) / (ty2 -ty1), y2]
+					t = self.check_angle(d, x1, x2, y1, y2)
+
+					if (t == ang[i] or t == ang[(i + 1) % len(ang)]):
+						d = [x1, ty1 + (ty2 - ty1) * (x1 - tx1) / (tx2 - tx1)]
+						t = self.check_angle(d, x1, x2, y1, y2)
+
+						if (t == ang[i] or t == ang[(i + 1) % len(ang)]):
+							d = [x2, ty1 + (ty2 - ty1) * (x2 - tx1) / (tx2 - tx1)]
+							t = self.check_angle(d, x1, x2, y1, y2)
+				
+				f[0].insert(i + 1, d)
+				return self.check_ohvat(f, wind)
+
+			s += a
+
+		return s % 8 == 0 and s != 0
+
+
 
 	def check_rezult(self, figura, wind):
+		rezult = False
 		rebra = []
 
 		for i in range(len(figura)):
 			rebra.append([])
-			rebra[i].append(figura[i])
-			rebra[i].append(figura[(i + 1) % len(figura)])
+			rebra[i].append(figura[0][i])
+			rebra[i].append(figura[0][(i + 1) % len(figura)])
 		j = 0
-		while rezult == false and j < len(rebra):
+		while rezult == False and j < len(rebra):
 			
 			if not (rebra[j][0][0] > wind[0] + wind[2] and rebra[j][1][0] > wind[0] + wind[2] or rebra[j][0][0] < wind[0] and rebra[j][1][0] < wind[0] or rebra[j][0][1] > wind[1] + wind[3] and rebra[j][1][1] > wind[1] + wind[3] or rebra[j][0][1] < wind[1] and rebra[j][1][1] < wind[1]):
 				xr = rebra[j][1][0] - rebra[j][0][0]
@@ -43,7 +163,14 @@ class SoftwareRender:
 						c1 = wind[1]
 						#if ():
 						n = c1 - m * c0 - b
-						n = c[k][1] - m * c[k][0] - b
+						ck0 = c0;
+						ck1 = c1;
+						if (k < 3):
+							ck1 += wind[3]
+
+						if (k > 1):
+							ck0 += wind[2]
+							
 						if last * n < 0:
 							rezult = True
 							break
@@ -56,16 +183,16 @@ class SoftwareRender:
 	def control(self):
 		
 		for p in range(1024):
-			time.sleep(0.000003)
+			time.sleep(0.000000003)
 			if (len(self.windows) != 0):
 				wind = self.windows.pop()
 				size = wind[2]
-				i = 0
+				num = 0
 				vnesh = 0
-				vnutr = []
+				draw = []
 
-				while (i < len(self.figure)):
-					figura = self.figure[i]
+				while (num < len(self.figure)):
+					figura = self.figure[num]
 					
 					x_min = figura[0][0][0]
 					x_max = figura[0][0][0]
@@ -91,9 +218,16 @@ class SoftwareRender:
 					elif size == 1 and vnesh != len(self.figure):
 						#фигура внутренняя
 						if x_min >= wind[0] and x_max <= wind[0] + wind[2] and y_min >= wind[1] and y_max <= wind[1] + wind[3]:
-							vnutr.append(figura)
+							draw.append(figura)
+						else:
+							if self.check_rezult(figura, wind):
+								draw.append(figura)
+							elif self.check_ohvat(figura, wind):
+								draw.append(figura)
 						#else:
 							#if 
+
+					num += 1
 
 				
 				
@@ -113,7 +247,12 @@ class SoftwareRender:
 					w1[0] -= size
 					pg.draw.rect(self.screen, (64, 128, 255), w1, 1)
 					self.windows.append(w1.copy());
-				#else:
+				else:
+					if (len(draw) > 0):
+						self.draw_func(draw, wind)
+					else:
+						pg.draw.rect(self.screen, (255, 155, 155), wind)
+
 
 
 					
