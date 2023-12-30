@@ -9,7 +9,9 @@ class SoftwareRender:
 		self.FPS = 60       #Кадры в секунду
 		self.screen = pg.display.set_mode(self.RES)
 		self.clock = pg.time.Clock()
-		self.figure = [[[[300, 300, 10], [500, 300, 10], [300, 500, 10]] , 'yellow'], [[[400, 450, 10], [600, 450, 5], [300, 400, 50]] , 'black']]
+		self.figure = [[[[300, 300, 10], [500, 300, 10], [300, 500, 10]] , 'yellow'], 
+				 [[[400, 450, 30], [600, 450, 30], [300, 400, 0]] , 'black'], 
+				[[[480, 270, 0], [680, 270, 70], [680, 480, 70], [480, 480, 0]] , 'blue']]
 		self.windows = []   #Стек окон
 	
 	#ПОМЕНЯТЬ
@@ -183,7 +185,7 @@ class SoftwareRender:
 	def control(self):
 		
 		for p in range(1024):
-			time.sleep(0.000000003)
+			time.sleep(0.000003)
 			if (len(self.windows) != 0):
 				wind = self.windows.pop()
 				size = wind[2]
